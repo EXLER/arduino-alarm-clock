@@ -1,8 +1,8 @@
-#include <LiquidCrystal.h>
-// #include <Time.h> for hardware
+#include <LiquidCrystal_I2C.h>
+#include <TimeLib.h>
 
 // Initialize the library with interface pins
-LiquidCrystal lcd(7, 6, 5, 4, 3, 2);
+LiquidCrystal_I2C lcd(0x27, 20, 4);
 
 #define PLUS_PIN 8
 #define MINUS_PIN 12
@@ -11,12 +11,15 @@ LiquidCrystal lcd(7, 6, 5, 4, 3, 2);
 
 #define LED_PIN 9
 
+#define TIME_HEADER  "T"   // Header tag for serial time sync message
+#define TIME_REQUEST  7    // ASCII bell character requests a time sync message 
+
 bool setAlarmMode = false;
 bool isAlarm = false;
 bool alarmSet = false;
 
-signed int hours = 22;
-signed int minutes = 50;
+signed int hours;
+signed int minutes;
 signed int setHours;
 signed int setMinutes;
 signed int alarmHours;
@@ -28,9 +31,12 @@ void setup()
     Serial.begin(9600);
     // (int: columns, int: rows)
     lcd.begin(16, 2);
+    lcd.backlight();
     lcd.setCursor(2, 0);
     lcd.print("Alarm  Clock");
 
+    setSyncProvider(requestSync);  // Set function to call when sync required
+    
     pinMode(PLUS_PIN, INPUT);
     digitalWrite(PLUS_PIN, HIGH);
     pinMode(MINUS_PIN, INPUT);
@@ -53,6 +59,9 @@ void loop()
     lcd.clear();
     while (!setAlarmMode)
     {
+        if (Serial.available()) {
+            processSyncMessage();
+        }
         lcd.setCursor(6, 0);
         printTimeToLCD(hours, minutes);
 
@@ -147,6 +156,26 @@ void loop()
             }
         }
     }
+}
+
+void processSyncMessage() {
+  unsigned long pctime;
+  const unsigned long DEFAULT_TIME = 1357041600; // Jan 1 2013
+
+  if(Serial.find(TIME_HEADER)) {
+     pctime = Serial.parseInt();
+     if(pctime >= DEFAULT_TIME) { // check the integer is a valid time (greater than Jan 1 2013)
+       setTime(pctime); // Sync Arduino clock to the time received on the serial port
+       hours = hour();
+       minutes = minute();
+     }
+  }
+}
+
+time_t requestSync()
+{
+  Serial.write(TIME_REQUEST);  
+  return 0; // the time will be sent later in response to serial mesg
 }
 
 void printTimeToSerial(int hours, int minutes)
