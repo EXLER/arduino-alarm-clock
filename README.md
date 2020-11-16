@@ -3,7 +3,7 @@
 Alarm clock made with Arduino using a 16x2 LCD.  
 Current hour and minute are shown on the display. There are 4 buttons:
 * "Select" button is responsible for enabling the "set alarm" mode
-* "+" and "-" buttons are responsible for adding and substracting minutes in the "set alarm" mode
+* "+" and "-" buttons are responsible for adding and subtracting minutes in the "set alarm" mode
 * "Alarm" button which is responsible for enabling and disabling the alarm
 
 The alarm is indicated by diode and on the display.
